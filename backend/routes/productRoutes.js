@@ -84,6 +84,10 @@ const getRandomItem = (array) => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
+const getRating = (maxRating) => {
+  return Math.random() * maxRating + 1;
+};
+
 // Load products from CSV at startup
 function loadProducts() {
   const filePath = path.join(__dirname, '../file_database/Products.csv');
@@ -99,6 +103,7 @@ function loadProducts() {
         description: categoryDescriptions[category],
         category: category,
         images: categoriesImages[category],
+        rating: getRating(5),
       };
       
       productsMap.set(product.id, product);

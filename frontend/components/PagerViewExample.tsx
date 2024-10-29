@@ -3,22 +3,17 @@ import { View, StyleSheet, Dimensions } from "react-native";
 import PagerView from "react-native-pager-view";
 import { Image } from "expo-image";
 
-// Sample images array with URLs
-const images: string[] = [
-  require("@/assets/images/clinic.webp"),
-  require("@/assets/images/Serum.jpeg"),
-  require("@/assets/images/HealthMonitoringDevices.jpeg"),
-  require("@/assets/images/Creams.jpeg"),
-];
+interface PagerViewExampleProps {
+  images: string[];
+}
 
 // Carousel component using PagerView
-const PagerViewExample: React.FC = () => {
+const PagerViewExample: React.FC<PagerViewExampleProps> = ({ images }) => {
   const { width } = Dimensions.get("window");
   const [currentPage, setCurrentPage] = useState<number>(0);
-
   const pagerRef = useRef<PagerView>(null);
-  const numberOfPages = images.length; // Adjust this to the number of pages you have
-  const intervalTime = 3000; // Time in milliseconds for auto switch
+  const numberOfPages = images.length;
+  const intervalTime = 3000;
 
   const getNextPage = (prevPage: number): number => {
     return (prevPage + 1) % numberOfPages;
@@ -26,20 +21,21 @@ const PagerViewExample: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (pagerRef.current) {
-        const nextPage = getNextPage(currentPage);
-        pagerRef.current.setPage(nextPage);
-        setCurrentPage(nextPage);
-      }
-      console.log("I came here...");
+      setCurrentPage((prevPage) => {
+        const nextPage = getNextPage(prevPage);
+        if (pagerRef.current) {
+          pagerRef.current.setPage(nextPage);
+        }
+        return nextPage;
+      });
     }, intervalTime);
 
-    // Clear the interval on component unmount
     return () => clearInterval(interval);
-  }, [currentPage, numberOfPages, intervalTime]);
+  }, [numberOfPages]);
 
   return (
     <PagerView
+      ref={pagerRef}
       style={styles.pagerView}
       initialPage={0}
       onPageSelected={(event) => setCurrentPage(event.nativeEvent.position)}

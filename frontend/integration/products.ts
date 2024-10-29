@@ -9,9 +9,10 @@ export interface Product {
   category: string;
   description: string[];
   images: string[];
+  rating: number;
 }
 
-const API_BASE_URL = 'http://localhost:3000/api/products';
+const API_BASE_URL = 'http://10.0.0.172:3000/api/products/';
 
 // Function to fetch products
 export const fetchProducts = async (): Promise<Product[]> => {

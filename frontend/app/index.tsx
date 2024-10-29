@@ -1,6 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import Button from "@/components/Button";
-import ProductDetail from "@/components/Product";
+import ProductDetail from "@/components/ProductDetail";
 
 export default function Index() {
   return (
