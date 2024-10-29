@@ -88,6 +88,18 @@ const getRating = (maxRating) => {
   return Math.random() * maxRating + 1;
 };
 
+// Diwali Offer details 
+function isDiwaliOfferValid() {
+  const currentDate = Date.now(); 
+  
+  // Diwali offer details.
+  const startDate = new Date('2024-10-29');
+  const endDate = new Date('2024-11-01');
+  
+  // Check if the input date is within the range
+  return currentDate >= startDate && currentDate <= endDate;
+}
+
 // Load products from CSV at startup
 function loadProducts() {
   const filePath = path.join(__dirname, '../file_database/Products.csv');
@@ -104,6 +116,7 @@ function loadProducts() {
         category: category,
         images: categoriesImages[category],
         rating: getRating(5),
+        offers: [{type: "Diwali", isValid: isDiwaliOfferValid()}]
       };
       
       productsMap.set(product.id, product);

@@ -7,6 +7,7 @@ import {
   Button,
   ScrollView,
   TouchableOpacity,
+  Image, // Import Image for displaying the product images
 } from "react-native";
 import { fetchProduct, Product } from "../integration/products"; // Adjust path as needed
 import PagerViewExample from "./PagerViewExample";
@@ -24,12 +25,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDiwaliOffer, setIsDiwaliOffer] = useState<boolean>(false);
+
+  function hasValidDiwaliOffer(product: Product): boolean {
+    return product.offers.some(
+      (offer) => offer.type.toLowerCase() === "diwali" && offer.isValid
+    );
+  }
 
   useEffect(() => {
     const loadProduct = async () => {
       try {
         const data = await fetchProduct(productId);
         setProduct(data);
+        setIsDiwaliOffer(hasValidDiwaliOffer(data));
       } catch (err) {
         setError("Failed to load product.");
       } finally {
@@ -70,7 +79,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.category}>{"Home" + " / " + product.category}</Text>
+        <Text style={styles.category}>{"Home / " + product.category}</Text>
         <View style={styles.imageCarousel}>
           <PagerViewExample images={images} />
         </View>
@@ -104,7 +113,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                 }
               />
               <Text style={styles.ratingText}>
-                {product.rating || 4.0} / 5.0
+                {product.rating.toFixed(1) || 4.0} / 5.0
               </Text>
             </View>
           </View>
@@ -114,6 +123,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
               - {desc}
             </Text>
           ))}
+          {/* Button Container */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={handleAddToCart}>
               <MaterialCommunityIcons name="cart" style={styles.buttonIcon} />
@@ -129,10 +139,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
           </View>
         </View>
       </ScrollView>
+
+      {isDiwaliOffer && (
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>Diwali Offer!</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
 
+// Updated styles
 const styles = StyleSheet.create({
   scrollViewContent: {
     paddingBottom: 20,
@@ -140,6 +157,7 @@ const styles = StyleSheet.create({
   },
   imageCarousel: {
     height: 300, // Fixed height for PagerView
+    position: "relative", // Allow absolute positioning of badge
   },
   productInfo: {
     paddingHorizontal: 20,
@@ -161,7 +179,6 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
   },
   starStyle: {
     color: "#FFD700", // Gold color for stars
@@ -199,10 +216,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: 20,
   },
-  addToCartButton: {
-    marginTop: 20,
-    color: "#6200EE", // Bright purple for the button text
-  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between", // Space between buttons
@@ -226,6 +239,20 @@ const styles = StyleSheet.create({
     color: "#FFFFFF", // Button text color
     fontSize: 16,
     textAlign: "center",
+  },
+  badgeContainer: {
+    position: "absolute",
+    top: 90,
+    left: 5,
+    backgroundColor: "rgba(255, 165, 0, 0.8)", // Semi-transparent orange
+    borderRadius: 10,
+    padding: 5,
+    zIndex: 1, // Ensure the badge is on top
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

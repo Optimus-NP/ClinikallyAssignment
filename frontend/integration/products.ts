@@ -1,6 +1,11 @@
 // ProductsApi.ts
 import axios from 'axios';
 
+export interface OfferTypes {
+  type: string;
+  isValid: boolean;
+}
+
 // Define the Product interface
 export interface Product {
   id: number;
@@ -10,6 +15,7 @@ export interface Product {
   description: string[];
   images: string[];
   rating: number;
+  offers: OfferTypes[];
 }
 
 const API_BASE_URL = 'http://10.0.0.172:3000/api/products/';
