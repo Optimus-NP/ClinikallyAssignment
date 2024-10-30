@@ -1,11 +1,11 @@
 import { StyleSheet, View } from "react-native";
-import ProductList from "@/components/ProductList";
+import ProductDetail from "@/components/ProductDetail";
 
 export default function Index() {
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <ProductList />
+        <ProductDetail productId="1" />
       </View>
     </View>
   );

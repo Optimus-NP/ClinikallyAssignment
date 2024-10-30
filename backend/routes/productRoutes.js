@@ -5,6 +5,7 @@ const csv = require('csv-parser');
 const path = require('path');
 
 const productsMap = new Map();
+const productsArray = new Array();
 
 const categoryDescriptions = {
   "Medical Equipment": [
@@ -118,7 +119,7 @@ function loadProducts() {
         rating: getRating(5),
         offers: [{type: "Diwali", isValid: isDiwaliOfferValid()}]
       };
-      
+      productsArray.push(product);
       productsMap.set(product.id, product);
     })
     .on('end', () => {
@@ -133,8 +134,31 @@ router.get('/', (req, res) => {
   res.json(Array.from(productsMap.values()));
 });
 
+router.get('/paginated', (req, res) => {
+  // Parse query parameters
+  const page = parseInt(req.query.page) || 1; // Default to page 1
+  const limit = parseInt(req.query.limit) || 10; // Default limit to 10
+
+  // Calculate start and end index for pagination
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  // Get paginated products
+  const paginatedProducts = productsArray.slice(startIndex, endIndex);
+  
+  // Create response object
+  const response = {
+    currentPage: page,
+    totalPages: Math.ceil(productsArray.length / limit),
+    totalProducts: productsArray.length,
+    products: paginatedProducts,
+  };
+
+  res.json(response);
+});
+
 // READ a single product by ID
-router.get('/:id', (req, res) => {
+router.get('/single/:id', (req, res) => {
   const product = productsMap.get(parseInt(req.params.id));
   if (product) res.json(product);
   else res.status(404).send('Product not found');
