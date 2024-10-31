@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   image: {
-    height: 300,
+    height: 180,
     borderRadius: 10,
   },
 });

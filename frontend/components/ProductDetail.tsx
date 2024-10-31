@@ -7,13 +7,22 @@ import {
   Button,
   ScrollView,
   TouchableOpacity,
-  Image, // Import Image for displaying the product images
+  Image,
+  TextInput, // Import Image for displaying the product images
 } from "react-native";
-import { fetchProduct, Product } from "../integration/products"; // Adjust path as needed
+import {
+  fetchPincodeAvailability,
+  fetchProduct,
+  fetchProductInventory,
+  PincodeNotFound,
+  Product,
+  ProductInventory,
+} from "../integration/products"; // Adjust path as needed
 import PagerViewExample from "./PagerViewExample";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Stars from "react-native-stars";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import CountdownTimer from "./CountdownTimer";
 
 const PlaceholderImage = require("@/assets/images/clinic.webp");
 
@@ -22,10 +31,19 @@ interface ProductDetailProps {
 }
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
+  console.log("ProductDetail: " + JSON.stringify(productId));
   const [product, setProduct] = useState<Product | null>(null);
+  const [productInventory, setProductInventory] =
+    useState<ProductInventory | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isDiwaliOffer, setIsDiwaliOffer] = useState<boolean>(false);
+  const [hurryFewLeft, setHurryFewLeft] = useState<boolean>(false);
+  const [pincode, setPincode] = useState("");
+  const [availability, setAvailability] = useState<string | null>(null);
+  const [buyNowText, setBuyNowText] = useState<string>("Buy Now");
+  const [expiryTimeForSameDayDelivery, setExpiryTimeForSameDayDelivery] =
+    useState<number>(0);
 
   function hasValidDiwaliOffer(product: Product): boolean {
     return product.offers.some(
@@ -34,6 +52,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
   }
 
   useEffect(() => {
+    console.log("UseEffect: " + productId);
     const loadProduct = async () => {
       try {
         const data = await fetchProduct(productId);
@@ -48,6 +67,51 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
 
     loadProduct();
   }, [productId]);
+
+  useEffect(() => {
+    const loadProductInventory = async () => {
+      try {
+        const data = await fetchProductInventory(productId);
+        setProductInventory(data);
+        if (!data.stockAvailable) {
+          setBuyNowText("PreOrder");
+        }
+        setHurryFewLeft(data.areOnlyFewItemsLeft);
+      } catch (err) {
+        setError("Failed to load product.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProductInventory();
+  }, [productId]);
+
+  useEffect(() => {
+    const loadPincodeData = async () => {
+      if (pincode && pincode.length === 6) {
+        try {
+          const data = await fetchPincodeAvailability(pincode);
+          if (data.isSameDayDeliveryPossible) {
+            setAvailability(`Deliverable Today`);
+            setExpiryTimeForSameDayDelivery(data.expiryTimeForSameDayDelivery);
+          } else {
+            setAvailability(`Deliverable in ${data.turnAroundTime} days`);
+          }
+        } catch (error) {
+          if (error instanceof PincodeNotFound) {
+            setAvailability("Pincode Not found");
+          } else {
+            setAvailability("Unknown Availability in Pincode");
+          }
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPincodeData();
+  }, [pincode]);
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -86,7 +150,23 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
         <View style={styles.productInfo}>
           <Text style={styles.productName}>{product.name}</Text>
           <View style={styles.priceRatingContainer}>
-            <Text style={styles.price}>₹{product.price.toFixed(2)}</Text>
+            {isDiwaliOffer && (
+              <View style={styles.originalPrice}>
+                <Text style={styles.originalPrice}>
+                  ₹{product.price.toFixed(2)}
+                </Text>
+                <Text style={styles.discountedPrice}>
+                  ₹{product.discountedPrice?.toFixed(2)}
+                </Text>
+              </View>
+            )}
+            {!isDiwaliOffer && (
+              <View style={styles.originalPrice}>
+                <Text style={styles.discountedPrice}>
+                  ₹{product.price?.toFixed(2)}
+                </Text>
+              </View>
+            )}
             <View style={styles.ratingContainer}>
               <Stars
                 default={product.rating || 4} // Default rating; adjust as needed
@@ -123,6 +203,38 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
               - {desc}
             </Text>
           ))}
+          <View style={styles.specificBadgesContainer}>
+            {hurryFewLeft && (
+              <View style={styles.hurryFewLeftContainer}>
+                <Text style={styles.hurryFewLeftText}>Hurry Few Left!</Text>
+              </View>
+            )}
+            {productInventory?.stockAvailable === false && (
+              <View style={styles.hurryFewLeftContainer}>
+                <Text style={styles.hurryFewLeftText}>Stock Unavailable!</Text>
+              </View>
+            )}
+            {availability && expiryTimeForSameDayDelivery != 0 && (
+              <View style={styles.hurryFewLeftContainer}>
+                <CountdownTimer initialSeconds={expiryTimeForSameDayDelivery} />
+              </View>
+            )}
+          </View>
+          {productInventory?.stockAvailable && (
+            <View style={styles.pincodeContainer}>
+              <TextInput
+                style={styles.pincodeInput}
+                placeholder="Enter Pincode"
+                keyboardType="numeric"
+                value={pincode}
+                onChangeText={setPincode}
+                maxLength={6} // Limit to 6 digits
+              />
+              {availability && (
+                <Text style={styles.availabilityMessage}>{availability}</Text>
+              )}
+            </View>
+          )}
           {/* Button Container */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={handleAddToCart}>
@@ -134,7 +246,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                 name="credit-card"
                 style={styles.buttonIcon}
               />
-              <Text style={styles.buttonText}>Buy Now</Text>
+              <Text style={styles.buttonText}>{buyNowText}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -156,7 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF", // Set background to white
   },
   imageCarousel: {
-    height: 300, // Fixed height for PagerView
+    height: 180, // Fixed height for PagerView
     position: "relative", // Allow absolute positioning of badge
   },
   productInfo: {
@@ -175,6 +287,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center", // Align items vertically centered
     marginBottom: 10, // Space below the price and rating
+  },
+  originalPrice: {
+    fontSize: 16,
+    color: "#888",
+    textDecorationLine: "line-through", // Strikethrough style
+    marginRight: 10,
+  },
+  discountedPrice: {
+    fontSize: 18,
+    color: "#6200EE",
   },
   ratingContainer: {
     flexDirection: "row",
@@ -204,7 +326,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#FF5722", // Bright orange color for the "Description" header
-    marginTop: 15,
   },
   descriptionText: {
     fontSize: 16,
@@ -216,9 +337,26 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: 20,
   },
+  hurryFewLeftContainer: {
+    backgroundColor: "#FF5722", // Bold color for urgency
+    padding: 8,
+    borderRadius: 5,
+    marginBottom: 10, // Space between the message and buttons
+  },
+  hurryFewLeftText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  specificBadgesContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between", // Space between buttons
+    justifyContent: "space-between",
     marginTop: 20,
   },
   button: {
@@ -253,6 +391,24 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  pincodeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  pincodeInput: {
+    flex: 1,
+    borderColor: "#cccccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginRight: 10,
+  },
+  availabilityMessage: {
+    fontSize: 16,
+    color: "#6200EE",
+    marginVertical: 10,
   },
 });
 

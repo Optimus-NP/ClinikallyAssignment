@@ -1,12 +1,13 @@
 import { StyleSheet, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+
 import ProductDetail from "@/components/ProductDetail";
 
-export default function Index() {
+export default function productDetail() {
+  const { productId } = useLocalSearchParams();
   return (
     <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <ProductDetail productId="1" />
-      </View>
+      <ProductDetail productId={productId} />
     </View>
   );
 }
@@ -16,9 +17,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#25292e",
     alignItems: "center",
-  },
-  imageContainer: {
-    flex: 1,
   },
   footerContainer: {
     flex: 1 / 3,

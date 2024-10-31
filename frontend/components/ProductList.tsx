@@ -13,6 +13,7 @@ import { fetchProducts, Product } from "../integration/products";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "@/app/types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 const CARD_HEIGHT = 150;
@@ -42,7 +43,7 @@ const ProductList: React.FC = () => {
   const [page, setPage] = useState<number>(1);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
-  const navigation = useNavigation<ProductListNavigationProp>();
+  const router = useRouter();
 
   useEffect(() => {
     loadProducts(page);
@@ -97,7 +98,11 @@ const ProductList: React.FC = () => {
   );
 
   const handleProductPress = (product: Product) => {
-    navigation.navigate("ProductDetail", { productId: product.id.toString() });
+    console.log("Clicked the product: " + product.id.toString());
+    router.push({
+      pathname: "/productDetails/[productId]",
+      params: { productId: product.id },
+    });
   };
 
   const loadMoreProducts = () => {
